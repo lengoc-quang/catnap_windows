@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/statvfs.h>
 #define GB 1073741824
+#ifdef __linux__
+#include <sys/statvfs.h>
+
 
 // Get all mounting points
 const char* getMountPoints() {
@@ -44,4 +46,21 @@ double getUsedDiskSpace(const char* mountingPoint) {
     const double used = total - available;
     return used;
 }
+#else
+#include <Windows.h>
+
+double getTotalDiskSpace() {
+    ULARGE_INTEGER totalSize, freeSize, totalFreeSize;
+    GetDiskFreeSpaceEx(NULL, &freeSize, &totalSize, &totalFreeSize)
+    return (double)totalSize.QuadPart / GB;
+}
+
+double getUsedDiskSpace() {
+    ULARGE_INTEGER totalSize, freeSize, totalFreeSize;
+    GetDiskFreeSpaceEx(NULL, &freeSize, &totalSize, &totalFreeSize)
+    return (double)(totalSize.QuadPart - freeSize.QuadPart) / GB;
+}
+
+#endif
+
 
