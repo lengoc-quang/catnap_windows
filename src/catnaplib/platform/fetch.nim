@@ -58,14 +58,18 @@ proc fetchSystemInfo*(config: Config, distroId: string = "nil"): FetchInfo =
         result.logo = config.distroart[distroId]
 
     else: # Generate logo using figlet
-        let figletFont = figletLogos["font"]
-        let tmpFile = "figlet_art.txt".toTmpPath 
+        when defined linux:
+            let figletFont = figletLogos["font"]
+            if execCmd(&"figlet -f {figletFont} '{distroId}' > /tmp/catnip_figlet_art.txt") != 0:
+                echo "ERROR: Failed to execute 'figlet'!"
+                quit(1)
+            let artLines = readFile("/tmp/catnip_figlet_art.txt").split('\n')
+            let tmargin = figletLogos["margin"]
+            result.logo.margin = [tmargin[0].getInt(), tmargin[1].getInt(), tmargin[2].getInt()]
+            for line in artLines:
+                if line != "":
+                    result.logo.art.add(figletLogos["color"].getStr() & line)
 
-        if execCmd(&"figlet -f {figletFont} '{distroId}' > {tmpFile}") != 0:
-            logError("Failed to execute 'figlet'!")
-        let artLines = readFile(tmpFile).split('\n')
-        let tmargin = figletLogos["margin"]
-        result.logo.margin = [tmargin[0].getInt(), tmargin[1].getInt(), tmargin[2].getInt()]
-        for line in artLines:
-            if line != "":
-                result.logo.art.add(figletLogos["color"].getStr() & line)
+        when defined windows:
+            logError(&"{config.file}:misc:figletLogos - Not supported on windows yet")
+            exit(0)
